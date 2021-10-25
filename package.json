@@ -21,6 +21,7 @@
   "homepage": "https://github.com/ayush0x00/ProperT#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2",
-    "@truffle/hdwallet-provider": "^1.5.1"
+    "@truffle/hdwallet-provider": "^1.5.1",
+    "chai": "^4.3.4"
   }
 }
