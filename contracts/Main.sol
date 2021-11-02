@@ -1,79 +1,73 @@
-// contracts/GameItems.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "./Auction.sol";
+import "./Base.sol";
 
-contract Main is ERC1155 {
-    uint256 currentId=0;
-    address owner;
-    uint256 _startBlock;
-    uint256 _endBlock;
-    mapping(uint256 =>address) private nftHolders;
-    bool [] private isListed;
-    mapping(uint256=>uint256) private bid;
-    mapping(uint256=>address) highestBidAddress;
-    bool auctionOpen=false;
-    bool auctionCancelled=false;
-
-    constructor() ERC1155("https://ipfs.io/ipfs/QmQUq6VmLzSKvYFJTWe7zgzUAkWVpsGTd2LyekmwdvAzvz/{id}.json") {
-        owner=msg.sender;
+contract Main is Base,Auction{
+    address payable god;
+    Base bc;
+    constructor(){
+        god=payable(msg.sender);
+        bc=new Base();
     }
 
-    modifier validListCond(uint256 id){
-        require(nftHolders[id]==msg.sender,"Only owner can list for auction");
-        require(auctionOpen,"Auction is not open");
-        _;
+    function getOwner() public view returns(address){
+        return god;
     }
 
-    function mintNFT(uint amt) public{
-        _mint(msg.sender, currentId, amt,"");
-        nftHolders[currentId]=msg.sender;
-        currentId+=1;
-    }
-    function getOwner(uint256 id) public view returns(address){
-        return nftHolders[id];
+    function getContractBalance() public view returns(uint){
+        return address(this).balance;
     }
 
-    function createAuction(uint256 startBlock, uint256 endBlock) public{
-        require(msg.sender==owner && !auctionOpen);
-        require(block.number<startBlock && startBlock<=endBlock);
-        _startBlock=startBlock;
-        _endBlock=endBlock;
-        auctionOpen=true;
-        auctionCancelled=false;
+    function mint(uint256 amnt) public{
+        Base.mintNFT(amnt);
     }
 
-    function isAuctionOpen() public view returns(bool){
-        return auctionOpen;
+    function send(address payable _to,uint256 value) public payable {
+        (bool sent,) = _to.call{value: value}("");
+        require(sent, "Failed to send Ether");
     }
 
-    function listForAuction(uint256 id,uint initBid)  public{ 
-        isListed.push(true);
-        bid[id]=initBid;
-    }
+    // function getBidder() public view returns( mapping (uint256=>address[])){
+    //     return Auction.bidders;
+    // }
 
-    function cancelAuction() public{
-        require(msg.sender==owner && block.number<_startBlock);
-        auctionOpen=false;
-        auctionCancelled=true;
-    }
+    function distributeFunds() private {
+        for(uint i=0;i<Auction.listedNFT.length;i++){
+            uint256 id=Auction.listedNFT[i];
+            
+            //Distributing fund to owner of nft
+            uint256 amntHighest=Auction.bid[id];
+            address nftowner=Base.nftHolders[id];
+            send(payable(nftowner), amntHighest);
 
-    function Bid(uint256 id) public payable{
-        require(nftHolders[id]!=msg.sender,"Owner can not bid for item");
-        require(msg.value>bid[id]);
-        bid[id]=msg.value;
-        highestBidAddress[id]=msg.sender;
-    }
-
-    function getAuctionResult() public payable{
-        require(!auctionCancelled && block.number>=_endBlock);
-        for(uint i=0;i<isListed.length;i++){
-            if(isListed[i]){
-                _safeTransferFrom(nftHolders[i], highestBidAddress[i], i, 1, "");
-                nftHolders[i]=highestBidAddress[i];
-                bid[i]=0;
+            //Distributing funds to all the bidders who lost the auction
+            address[] memory allbidders=Auction.bidders[id];
+            for(uint j=0;j<allbidders.length;j++){
+                address bidder=allbidders[j];
+                if(bidder==Auction.highestBidAddress[id]) continue;
+                uint256 amnt=Auction.amountBidded[id][bidder];
+                send(payable(bidder),amnt);
             }
+        }
+    }
+
+    function getBidders(uint256 id) public view  returns(address[] memory){
+        return Auction.bidders[id];
+    }
+
+    function bal(address acc, uint256 id) public view returns(uint256){
+        return Base.getBalance(acc, id);
+    }
+
+    function getAuctionResult() public{
+        distributeFunds();
+        for(uint i=0;i<Auction.listedNFT.length;i++){
+            uint256 id=Auction.listedNFT[i];
+            address nftOwner=Base.nftHolders[id];
+            Base.transferNFT(nftOwner, Auction.highestBidAddress[id], id, 1);
+            Base.nftHolders[id]=Auction.highestBidAddress[id];
         }
     }
 }
