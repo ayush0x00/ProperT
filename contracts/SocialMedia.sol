@@ -12,24 +12,29 @@ contract SocialMedia{
         _;
     }
 
-    mapping(address=>uint256[]) private userWeights;
-    mapping(address=>uint256[]) private degradingFactor;
+    mapping(string=>mapping(string=>uint256)) private userWeights;
+    mapping(string=>mapping(string=>uint256)) private degradingFactor;
+    mapping(string=>mapping(string=>uint256)) private individualWeightMatrix; 
+    //rows= twitter,instagram,facebook
+    //columns= likes, comment, others
     uint256 private instaW;
     uint256 private twitterW;
     uint256 private youtubeW;
 
-    function setInstaWeight(uint256 w) private onlyOwner{
-        instaW=w;
+    function setWeights(string memory platform, string memory field,uint256 w) private onlyOwner{
+        individualWeightMatrix[platform][field]=w;
     }
 
-    function setInstaDegarading(address user, uint256 d) private onlyOwner{
-        degradingFactor[user][0]=d;
+
+
+    function setInstaDegarading(string memory userId, string memory platform,uint256 d) private onlyOwner{
+        degradingFactor[userId][platform]=d;
     }
-    function setTwitterDegarading(address user, uint256 d) private onlyOwner{
-        degradingFactor[user][1]=d;
+    function setTwitterDegarading(string memory userId, string memory platform,uint256 d) private onlyOwner{
+        degradingFactor[userId][platform]=d;
     }
-    function setYoutubeDegarading(address user, uint256 d) private onlyOwner{
-        degradingFactor[user][2]=d;
+    function setYoutubeDegarading(string memory userId, string memory platform,uint256 d) private onlyOwner{
+        degradingFactor[userId][platform]=d;
     }
 
     function setTwitterWeight(uint256 w) private onlyOwner{
@@ -40,15 +45,17 @@ contract SocialMedia{
         youtubeW=w;
     }
 
-    function updateUserWeights(address user, uint256[] memory weights) public{
-        uint256 iw=weights[0]*instaW;
-        uint256 tw=weights[1]*twitterW;
-        uint256 yw=weights[2]*youtubeW;
-        uint256[] memory previousW=userWeights[user];
-        iw+=previousW[0]-degradingFactor[user][0];
-        tw+=previousW[1]-degradingFactor[user][0];
-        yw+=previousW[2]-degradingFactor[user][0];
-        userWeights[user]=[iw,tw,yw];
+    function updateUserWeights(string memory userId, string memory platform, string memory field, uint256 n) public{
+        // uint256 iw=weights[0]+instaW;
+        // uint256 tw=weights[1]+twitterW;
+        // uint256 yw=weights[2]+youtubeW;
+        // uint256[] memory previousW=userWeights[userId];
+        // iw+=previousW[0]-degradingFactor[userId][0];
+        // tw+=previousW[1]-degradingFactor[userId][1];
+        // yw+=previousW[2]-degradingFactor[userId][2];
+        // userWeights[userId]=[iw,tw,yw];
+        uint256 reward=n*(individualWeightMatrix[platform][field]);
+        userWeights[userId][platform]=reward-degradingFactor[userId][platform];
     }
 
 }
