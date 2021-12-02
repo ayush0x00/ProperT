@@ -14,6 +14,7 @@ contract Campaign is SocialMedia{
 
     mapping(string=>mapping(string=>uint256)) public userReward;
 
+
     function updateUserReward(string memory userId, string memory platform, uint256[] memory data) public{
         uint256 likeReward=data[0]*SocialMedia.individualWeightMatrix[platform]["likes"];
         uint256 commentReward=data[1]*SocialMedia.individualWeightMatrix[platform]["comments"];
