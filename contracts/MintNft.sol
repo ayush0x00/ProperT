@@ -9,30 +9,33 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract NFT is ERC721,ERC721URIStorage{
     uint256 public totalNFT=0;
-    uint256 public TOTAL_LAND=2000; //hard coded value
+    uint256 public landNFT=0;
+    uint256 public lordNFT=0;
     address adminNft;
-    event hashCalc(string);
-    mapping(address=> uint256[]) public boostsOfUser;
-    mapping(address=>uint256) public landOfUser;
-    address[] public allUsers;
+    event Breach(address);
+    event lordMinted(uint256);
+    event landMinted(uint256);
     string private salt="1234";
-
+    
     constructor() ERC721("ProperT","PRT"){
         adminNft = msg.sender;
     }
 
     function deposit(uint256 amount) public payable{}
 
-    function mint(bytes32 hashVal, string memory _tokenURI) public payable {
-        uint256 cost= msg.value;
-        bytes memory  preHash = bytes(abi.encodePacked(Strings.toString(cost),salt));
+    function mint(bytes32 hashVal, string memory _tokenURI, bool lord) public payable {
+        bytes memory  preHash = bytes(abi.encodePacked(Strings.toString(msg.value),salt));
         bytes32 expectedHash = sha256(preHash);
-        require(expectedHash == hashVal,"Breach alert");
-        totalNFT+=1;
+        if(expectedHash != hashVal){
+            emit Breach(msg.sender);
+            revert("Invalid hash");
+        }
         deposit(msg.value);
+        totalNFT+=1;
         _mint(msg.sender, totalNFT);
         _setTokenURI(totalNFT,_tokenURI);
-
+        if(lord) emit lordMinted(totalNFT);
+        else emit landMinted(totalNFT);
     }
 
     function _burn(uint256 tokenId) internal override(ERC721URIStorage, ERC721) {
