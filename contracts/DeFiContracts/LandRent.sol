@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./MintNft.sol";
+import "../MintingContracts/MintNft.sol";
 
 contract LandRent is NFT{
     using SafeMath for uint256;
@@ -14,7 +14,7 @@ contract LandRent is NFT{
         admin=msg.sender;
         nftContract=_nftContract;
     }
-    uint256 originalLand=nftContract.totalNFT();
+    uint256 originalLand=4;//nftContract.totalNFT();
     uint256 virtualLand=0;
 
     modifier onlyAdmin{
