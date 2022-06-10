@@ -9,10 +9,10 @@ contract VaultNFT is ERC1155{
     uint goldVaultRate=25;
     uint diamondVaultRate=30;
     mapping (address=>Person) vaultOwnerInfo;
-    VironToken viron;
+    address viron;
+    
 
-
-    constructor(VironToken _viron) ERC1155("TokenURI string"){
+    constructor(address _viron) ERC1155("TokenURI string"){
         owner=msg.sender;
         viron=_viron;
     }
@@ -48,7 +48,7 @@ contract VaultNFT is ERC1155{
         Person storage p= vaultOwnerInfo[msg.sender];
         uint timeElapsedInDays= (block.timestamp-p.lastWithdrawal)/86400;
         uint vironToWithdraw= ((p.diamondVaultCount*diamondVaultRate)+(p.goldVaultCount)*goldVaultRate+(p.platinumVaultCount*platinumVaultRate))*timeElapsedInDays;
-        viron.transfer(p.owner, vironToWithdraw);
+        VironToken(viron).transferFrom(viron, p.owner, vironToWithdraw);
         p.lastWithdrawal=block.timestamp; 
     }
 
