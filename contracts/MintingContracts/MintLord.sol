@@ -9,10 +9,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract LordNFT is ERC721, ERC721URIStorage{
     address owner;
     uint256[3] costOfLord = [0,0,0];
-    uint8[3] maxLordRentLimit = [0,0,0];
+    uint8[3] public maxLordRentLimit = [0,0,0];
     event Breach(address user);
     string private salt="1234";
-    mapping (uint256 => uint8) tokenIdToLordType;
+    mapping (uint256 => uint8) public tokenIdToLordType;
     mapping (address => User) userInfo;
 
     struct User{

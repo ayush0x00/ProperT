@@ -12,7 +12,7 @@ contract LandNFT is ERC721, ERC721URIStorage{
     uint256[3] public numberOfMints = [0,0,0];
     event Breach(address user);
     string private salt="1234";
-    mapping (uint256 => uint8) tokenIdToLandType;
+    mapping (uint256 => uint8) public tokenIdToLandType;
     mapping (uint256 => uint256) public landBoughtAt;
     mapping (address => User) userInfo;
 
