@@ -1,17 +1,19 @@
 pragma solidity ^0.8.0;
 
-import "../MintingContracts/MintNft.sol";
+import "../MintingContracts/MintLand.sol";
+import "../MintingContracts/MintLord.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Rental{
     using SafeMath for uint256;
     address owner;
-    NFT LandLordNFTContract;
-    //LordNFT LordNFTContract;
-    constructor (address _landLordNFT){
+    LandNFT landNFTContract;
+    LordNFT lordNFTContract;
+    mapping(address => mapping(uint256 => uint256)) landMarkedForRent;
+    constructor (address _landNFT, address _lordNFT){
         owner=msg.sender;
-        LandLordNFTContract= NFT(_landLordNFT);
-        
+        landNFTContract = LandNFT(payable(_landNFT));
+        lordNFTContract = LordNFT(payable(_lordNFT));    
     }
 
     receive() external payable {}
@@ -21,30 +23,35 @@ contract Rental{
         require (sent, "Failed to send amount");
     }
 
-    function sumOfWeightNumberProd() private view returns(uint256){
-        uint256 result=0;
-        for(uint8 i= 1; i<=3; i++){
-            result += LandLordNFTContract.getNumberOfMints(i).mul(LandLordNFTContract.getWeight(i));
+
+    function signUpForRent(uint256 landTokenId, uint256 lordTokenId) public view{
+        require(msg.sender == landNFTContract.ownerOf(landTokenId) && msg.sender == lordNFTContract.ownerOf(lordTokenId));
+        landMarkedForRent[msg.sender][landTokenId] == block.timestamp;
+    }
+
+    function getEachDayRent(uint256 landTokenId) public view returns(uint256){
+
+    }
+
+    function getTotalRent(address user, uint256 landTokenId) public view returns(uint256){
+        uint256 landBuyTime = landNFTContract.landBoughtAt(landTokenId);
+        uint256 landMarkedForRentTime = landMarkedForRent[user][landTokenId];
+        require( landBuyTime <= landMarkedForRentTime);
+        uint256 totalRentDays = block.timestamp.sub(landMarkedForRentTime).div(86400);
+        return totalRentDays.mul(getEachDayRent(landTokenId));
+    }
+
+    function withdrawRent(uint256 landTokenId, uint256 lordTokenId) public payable{
+         
+    }
+
+    function getWeightOfLand(uint256 typeOfLand) public view returns(uint256){
+        uint256 sumWeightMintProd = 0;
+        for(uint8 i=0; i<3; i++){
+            sumWeightMintProd += landNFTContract.costOfLand(i).mul(landNFTContract.numberOfMints(i));
         }
-        return result;
-    }
 
-    function getMyRent(address user) private view returns(uint256) {
-        (bool available,uint8 typeofLand,,,uint256 startTime,uint256 totalRentalTime) = LandLordNFTContract.userInfo(user);
-
-        uint256 numberOfMints = LandLordNFTContract.getNumberOfMints(typeofLand);
-        uint256 weightOfLand = LandLordNFTContract.getWeight(typeofLand);
-        
-        uint256 perDayRent = (numberOfMints.mul(weightOfLand)).div(sumOfWeightNumberProd());
-        if(!available) return perDayRent.mul(totalRentalTime.div(86400));
-        return perDayRent.mul((totalRentalTime.add(block.timestamp.sub(startTime))).div(86400));
-    }
-
-    function withdrawRent() public payable{
-        uint256 totalRent = getMyRent(msg.sender);
-        require(totalRent > 0, "Nothing to withdraw");
-        transferAmount(payable(msg.sender), totalRent);
-        LandLordNFTContract.setUserForRent(msg.sender);
+        return landNFTContract.costOfLand(typeOfLand-1).div(sumWeightMintProd);
     }
 
 }
