@@ -14,9 +14,10 @@ contract LordNFT is ERC721, ERC721URIStorage{
     string private salt="1234";
     mapping (uint256 => uint8) public tokenIdToLordType;
     mapping (address => User) userInfo;
+    mapping (uint256 => uint256) public lordBoughtAt;
 
     struct User{
-        uint256[3] lordsOwned;
+        uint256[3] lordsOwned; 
     }
 
     constructor() ERC721("LOL Lord NFTS","LORDS"){
@@ -42,6 +43,16 @@ contract LordNFT is ERC721, ERC721URIStorage{
         tokenIdToLordType[tokenId] = typeOfLord;
         User storage _user = userInfo [msg.sender];
         _user.lordsOwned[typeOfLord-1] += 1; 
+    }
+
+    function _transfer(address from, address to, uint256 tokenId) internal override{
+        User storage _sender = userInfo[from];
+        User storage _receiver = userInfo[to];
+        uint8 typeOfLord = tokenIdToLordType[tokenId];
+        _sender.lordsOwned[typeOfLord-1] -= 1;
+        _receiver.lordsOwned[typeOfLord-1] += 1;
+        lordBoughtAt[tokenId] = block.timestamp;
+        super._transfer(from,to,tokenId);
     }
 
 
