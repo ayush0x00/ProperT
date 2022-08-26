@@ -8,16 +8,16 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract LordNFT is ERC721, ERC721URIStorage{
     address owner;
-    uint256[3] costOfLord = [0,0,0];
-    uint8[3] public maxLordRentLimit = [0,0,0];
+    uint256[3] costOfLord = [0,0,0]; // stores cost of lord. costOfLord[0] stores cost of lord of type 1 and so on.
+    uint8[3] public maxLordRentLimit = [0,0,0]; // maxLordLimit[i] gives maximum amount of land (i+1)th lord can rent
     event Breach(address user);
     string private salt="1234";
-    mapping (uint256 => uint8) public tokenIdToLordType;
+    mapping (uint256 => uint8) public tokenIdToLordType; // stores token id to type of lord
     mapping (address => User) userInfo;
-    mapping (uint256 => uint256) public lordBoughtAt;
+    mapping (uint256 => uint256) public lordBoughtAt; // stores time when the particular lord was bought
 
     struct User{
-        uint256[3] lordsOwned; 
+        uint256[3] lordsOwned; // lordsOwned[i] gives number of lord of type (i+1) which the user owns.
     }
 
     constructor() ERC721("LOL Lord NFTS","LORDS"){
@@ -31,6 +31,7 @@ contract LordNFT is ERC721, ERC721URIStorage{
 
     receive() external payable {}
 
+// Similar kind of miniting as compared with MintLand
     function mint(bytes32 hashVal, uint256 tokenId, string memory _tokenURI, uint8 typeOfLord) public payable {
         bytes memory  preHash = bytes(abi.encodePacked(Strings.toString(msg.value),salt));
         bytes32 expectedHash = sha256(preHash);
@@ -79,6 +80,10 @@ contract LordNFT is ERC721, ERC721URIStorage{
 
     function getLordsOwned(address user, uint8 typeOfLord) external view returns(uint256){
         return userInfo[user].lordsOwned[typeOfLord-1];
+    }
+    
+    function updateSalt(string _salt) public onlyOwner{
+        salt = _salt;
     }
     
 }
